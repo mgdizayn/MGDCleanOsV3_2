@@ -1,0 +1,703 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+<meta name="theme-color" content="#070b16" />
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+<title>MGD CleanOS</title>
+<link rel="manifest" href="./manifest.json" />
+<link rel="icon" type="image/png" href="./favicon-32.png" />
+<link rel="apple-touch-icon" href="./icon-192.png" />
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@600;700;800&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600&display=swap" rel="stylesheet" />
+<style>
+/* ─── TEMEL ─── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --bg: #070b16;
+  --bg-2: #0d1326;
+  --card: #131a2e;
+  --card-2: #1a2340;
+  --border: #243056;
+  --text: #e8ecf7;
+  --text-dim: #8892b0;
+  --accent: #ffb020;
+  --accent-2: #ffd166;
+  --success: #22c55e;
+  --danger: #ef4444;
+  --warn: #f59e0b;
+  --info: #3b82f6;
+  --radius: 16px;
+  --radius-sm: 10px;
+  --shadow: 0 8px 32px rgba(0,0,0,0.4);
+  --font: 'DM Sans', system-ui, sans-serif;
+  --font-display: 'Syne', sans-serif;
+}
+html, body {
+  height: 100%;
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font);
+  font-size: 15px;
+  line-height: 1.5;
+  overflow: hidden;
+  -webkit-tap-highlight-color: transparent;
+  -webkit-font-smoothing: antialiased;
+}
+body {
+  display: flex;
+  flex-direction: column;
+  max-width: 480px;
+  margin: 0 auto;
+  position: relative;
+}
+button { font-family: inherit; cursor: pointer; border: none; background: none; color: inherit; }
+input { font-family: inherit; }
+
+/* ─── HEADER ─── */
+.app-header {
+  padding: 16px 20px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: linear-gradient(180deg, var(--bg-2) 0%, transparent 100%);
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+}
+.app-header .brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.app-header .brand img { width: 32px; height: 32px; border-radius: 8px; }
+.app-header .brand .title {
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: 16px;
+  letter-spacing: 0.5px;
+}
+.app-header .brand .subtitle {
+  font-size: 11px;
+  color: var(--text-dim);
+}
+.status-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 500;
+}
+.status-pill .dot {
+  width: 8px; height: 8px; border-radius: 50%;
+  background: var(--warn);
+  animation: pulse 1.5s infinite;
+}
+.status-pill.connected .dot { background: var(--success); }
+.status-pill.error .dot { background: var(--danger); }
+@keyframes pulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.5; transform: scale(0.85); }
+}
+
+/* ─── EKRANLAR ─── */
+.screen {
+  flex: 1;
+  display: none;
+  flex-direction: column;
+  overflow-y: auto;
+  padding: 20px;
+  animation: fadeIn 0.3s ease;
+}
+.screen.active { display: flex; }
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* ─── SPLASH ─── */
+#screen-splash {
+  justify-content: center;
+  align-items: center;
+  text-align: center;
+  gap: 24px;
+  background: radial-gradient(circle at 50% 30%, var(--card-2) 0%, var(--bg) 70%);
+}
+#screen-splash img { width: 120px; height: 120px; border-radius: 24px; box-shadow: var(--shadow); }
+#screen-splash h1 {
+  font-family: var(--font-display);
+  font-size: 28px;
+  font-weight: 800;
+  background: linear-gradient(135deg, var(--accent) 0%, var(--accent-2) 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+#screen-splash .tap-hint {
+  color: var(--text-dim);
+  font-size: 13px;
+  animation: pulse 2s infinite;
+}
+
+/* ─── GİRİŞ ─── */
+.login-box {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 28px 24px;
+  margin-top: 20px;
+}
+.login-box h2 {
+  font-family: var(--font-display);
+  font-size: 22px;
+  margin-bottom: 8px;
+}
+.login-box p { color: var(--text-dim); font-size: 13px; margin-bottom: 20px; }
+.input-group { margin-bottom: 16px; }
+.input-group label {
+  display: block;
+  font-size: 12px;
+  color: var(--text-dim);
+  margin-bottom: 6px;
+  font-weight: 500;
+}
+.input-group input {
+  width: 100%;
+  padding: 14px 16px;
+  background: var(--bg-2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  color: var(--text);
+  font-size: 16px;
+  letter-spacing: 2px;
+  transition: border-color 0.2s;
+}
+.input-group input:focus {
+  outline: none;
+  border-color: var(--accent);
+}
+
+/* ─── BUTONLAR ─── */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 14px 20px;
+  border-radius: var(--radius-sm);
+  font-weight: 600;
+  font-size: 15px;
+  transition: all 0.2s;
+  width: 100%;
+}
+.btn-primary {
+  background: linear-gradient(135deg, var(--accent) 0%, var(--accent-2) 100%);
+  color: #1a1a1a;
+}
+.btn-primary:active { transform: scale(0.98); }
+.btn-primary:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+.btn-secondary {
+  background: var(--card-2);
+  border: 1px solid var(--border);
+  color: var(--text);
+}
+.btn-danger {
+  background: linear-gradient(135deg, var(--danger) 0%, #dc2626 100%);
+  color: white;
+}
+.btn.loading {
+  position: relative;
+  color: transparent !important;
+}
+.btn.loading::after {
+  content: '';
+  position: absolute;
+  width: 18px; height: 18px;
+  border: 2px solid currentColor;
+  border-top-color: transparent;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+  color: var(--text);
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* ─── BİRİM KARTI ─── */
+.unit-card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 20px;
+  margin-bottom: 16px;
+}
+.unit-card.warning {
+  border-color: var(--warn);
+  background: linear-gradient(135deg, var(--card) 0%, rgba(245, 158, 11, 0.08) 100%);
+}
+.unit-card h3 {
+  font-family: var(--font-display);
+  font-size: 20px;
+  margin-bottom: 8px;
+}
+.unit-card .code {
+  display: inline-block;
+  padding: 4px 10px;
+  background: var(--bg-2);
+  border-radius: 6px;
+  font-size: 12px;
+  color: var(--text-dim);
+  font-family: monospace;
+  margin-bottom: 12px;
+}
+.warning-banner {
+  background: rgba(245, 158, 11, 0.15);
+  border: 1px solid var(--warn);
+  border-radius: var(--radius-sm);
+  padding: 12px;
+  color: var(--warn);
+  font-size: 13px;
+  font-weight: 500;
+  margin-bottom: 16px;
+}
+
+/* ─── TALİMAT ─── */
+.talimat-list {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 16px;
+  margin-bottom: 16px;
+  max-height: 300px;
+  overflow-y: auto;
+}
+.talimat-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 10px 0;
+  border-bottom: 1px solid var(--border);
+  font-size: 14px;
+}
+.talimat-item:last-child { border-bottom: none; }
+.talimat-item .num {
+  flex-shrink: 0;
+  width: 24px; height: 24px;
+  background: var(--accent);
+  color: #1a1a1a;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 12px;
+}
+.confirmed-badge {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px;
+  background: rgba(34, 197, 94, 0.1);
+  border: 1px solid var(--success);
+  border-radius: var(--radius-sm);
+  color: var(--success);
+  font-size: 14px;
+  font-weight: 500;
+  margin-bottom: 16px;
+}
+
+/* ─── AKTİF İŞLEM ─── */
+.active-op {
+  text-align: center;
+  padding: 20px;
+}
+.active-op .timer {
+  font-family: var(--font-display);
+  font-size: 48px;
+  font-weight: 800;
+  color: var(--accent);
+  margin: 24px 0;
+  letter-spacing: 2px;
+}
+.active-op .info {
+  color: var(--text-dim);
+  font-size: 14px;
+  margin-bottom: 24px;
+}
+
+/* ─── GÜVENLİK DOĞRULAMA MODAL ─── */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.85);
+  backdrop-filter: blur(8px);
+  display: none;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 20px;
+  animation: fadeIn 0.2s;
+}
+.modal-overlay.active { display: flex; }
+.modal {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 24px;
+  width: 100%;
+  max-width: 400px;
+  max-height: 90vh;
+  overflow-y: auto;
+}
+.modal h3 {
+  font-family: var(--font-display);
+  font-size: 20px;
+  margin-bottom: 12px;
+}
+.modal p { color: var(--text-dim); font-size: 14px; margin-bottom: 16px; }
+
+/* ─── QR COUNTDOWN (ÖZELLİK #1) ─── */
+.qr-countdown {
+  position: absolute;
+  bottom: 20%;
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(220, 38, 38, 0.95);
+  color: white;
+  padding: 12px 24px;
+  border-radius: 12px;
+  font-weight: 600;
+  font-size: 14px;
+  backdrop-filter: blur(8px);
+  opacity: 0;
+  transition: opacity 0.3s;
+  pointer-events: none;
+  z-index: 10;
+  white-space: nowrap;
+}
+.qr-countdown.active { opacity: 1; }
+
+/* ─── ONAY DIALOG (ÖZELLİK #2) ─── */
+.confirm-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.85);
+  backdrop-filter: blur(8px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 2000;
+  padding: 20px;
+  animation: fadeIn 0.2s;
+}
+.confirm-dialog {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 24px;
+  max-width: 360px;
+  width: 100%;
+  text-align: center;
+}
+.confirm-dialog h3 {
+  font-family: var(--font-display);
+  font-size: 20px;
+  margin-bottom: 12px;
+}
+.confirm-dialog p {
+  color: var(--text-dim);
+  font-size: 14px;
+  margin-bottom: 20px;
+}
+.confirm-actions {
+  display: flex;
+  gap: 10px;
+}
+.confirm-actions button {
+  flex: 1;
+  padding: 12px;
+  border-radius: var(--radius-sm);
+  font-weight: 600;
+  font-size: 14px;
+}
+.confirm-actions .btn-cancel {
+  background: var(--bg-2);
+  border: 1px solid var(--border);
+  color: var(--text);
+}
+.confirm-actions .btn-confirm {
+  background: linear-gradient(135deg, var(--accent) 0%, var(--accent-2) 100%);
+  color: #1a1a1a;
+}
+
+/* ─── TOAST ─── */
+.toast {
+  position: fixed;
+  bottom: 24px;
+  left: 50%;
+  transform: translateX(-50%) translateY(100px);
+  background: var(--card-2);
+  border: 1px solid var(--border);
+  padding: 12px 20px;
+  border-radius: var(--radius-sm);
+  font-size: 14px;
+  font-weight: 500;
+  z-index: 3000;
+  transition: transform 0.3s;
+  box-shadow: var(--shadow);
+  max-width: 90%;
+  text-align: center;
+}
+.toast.show { transform: translateX(-50%) translateY(0); }
+.toast.success { border-color: var(--success); color: var(--success); }
+.toast.error { border-color: var(--danger); color: var(--danger); }
+
+/* ─── AYARLAR ─── */
+.settings-list {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 8px 16px;
+}
+.setting-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 0;
+  border-bottom: 1px solid var(--border);
+}
+.setting-row:last-child { border-bottom: none; }
+.setting-row label {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 14px;
+  cursor: pointer;
+  flex: 1;
+}
+.setting-row input[type="checkbox"] {
+  width: 20px; height: 20px;
+  accent-color: var(--accent);
+}
+
+/* ─── FOOTER ─── */
+.app-footer {
+  padding: 12px 20px;
+  text-align: center;
+  font-size: 11px;
+  color: var(--text-dim);
+  border-top: 1px solid var(--border);
+  flex-shrink: 0;
+  line-height: 1.6;
+}
+.app-footer .cache-note {
+  margin-top: 6px;
+  font-size: 10px;
+  color: var(--text-dim);
+  opacity: 0.7;
+}
+
+/* ─── QR SCANNER ─── */
+#qr-reader { width: 100%; border-radius: var(--radius-sm); overflow: hidden; }
+#qr-reader video { border-radius: var(--radius-sm); }
+#qr-reader__dashboard { padding: 10px 0 !important; }
+#qr-reader__dashboard button {
+  background: var(--card-2) !important;
+  color: var(--text) !important;
+  border: 1px solid var(--border) !important;
+  border-radius: var(--radius-sm) !important;
+  padding: 8px 16px !important;
+}
+#qr-reader__dashboard span { color: var(--text-dim) !important; }
+#qr-reader__dashboard select {
+  background: var(--card-2) !important;
+  color: var(--text) !important;
+  border: 1px solid var(--border) !important;
+  border-radius: var(--radius-sm) !important;
+  padding: 6px 10px !important;
+}
+
+/* ─── UTIL ─── */
+.hidden { display: none !important; }
+.text-center { text-align: center; }
+.mt-8 { margin-top: 8px; }
+.mt-16 { margin-top: 16px; }
+.mt-24 { margin-top: 24px; }
+.mb-16 { margin-bottom: 16px; }
+.gap-10 { display: flex; gap: 10px; }
+.flex-1 { flex: 1; }
+</style>
+</head>
+<body>
+
+<!-- ─── HEADER ─── -->
+<header class="app-header">
+  <div class="brand">
+    <img src="./logo.png" alt="MGD" />
+    <div>
+      <div class="title">MGD CleanOS</div>
+      <div class="subtitle">Dijital Takip Sistemi</div>
+    </div>
+  </div>
+  <div id="status-pill" class="status-pill">
+    <span class="dot"></span>
+    <span id="status-text">🟡 Bağlanıyor</span>
+  </div>
+</header>
+
+<!-- ─── SPLASH ─── -->
+<section id="screen-splash" class="screen active">
+  <img src="./splash-logo.png" alt="MGD CleanOS" />
+  <h1>MGD CleanOS</h1>
+  <div>Dijital Takip Sistemi</div>
+  <div class="tap-hint">Devam etmek için dokunun</div>
+</section>
+
+<!-- ─── GİRİŞ ─── -->
+<section id="screen-login" class="screen">
+  <div style="text-align:center; margin-bottom: 24px;">
+    <div style="font-size: 40px;">Hoş Geldiniz 👋</div>
+  </div>
+  <div class="login-box">
+    <h2>Giriş Yap</h2>
+    <p>TC kimlik numaranızı girerek sisteme giriş yapın</p>
+    <div class="input-group">
+      <label for="input-tc">TC Kimlik Numarası</label>
+      <input type="tel" id="input-tc" inputmode="numeric" pattern="[0-9]*" maxlength="11" placeholder="XXXXXXXXXXX" autocomplete="off" />
+    </div>
+    <button class="btn btn-primary" id="btn-login">Giriş Yap →</button>
+  </div>
+</section>
+
+<!-- ─── BİRİM SEÇİMİ ─── -->
+<section id="screen-unit-select" class="screen">
+  <div style="text-align:center; margin-bottom: 20px;">
+    <div style="font-size: 32px;">📱</div>
+    <h2 style="font-family: var(--font-display); margin-top: 8px;">Birim Seçimi</h2>
+    <p style="color: var(--text-dim); font-size: 13px; margin-top: 4px;">Temizlenecek birimin QR kodunu okutun</p>
+  </div>
+  <div id="qr-reader"></div>
+  <div id="qr-countdown" class="qr-countdown"></div>
+  <button class="btn btn-secondary mt-16" id="btn-logout-1">← Çıkış</button>
+</section>
+
+<!-- ─── BİRİM BİLGİ ─── -->
+<section id="screen-unit-info" class="screen">
+  <div class="unit-card" id="unit-card">
+    <h3 id="unit-name">🏢 Birim Bilgisi</h3>
+    <div class="code" id="unit-code">Kod: XXX</div>
+    <div id="unit-warning" class="warning-banner hidden">
+      ⚠️ DİKKAT: BU BİR ÖZELLİKLİ BİRİMDİR! TALİMATLARI OKUMAK ZORUNLUDUR!
+    </div>
+    <div id="unit-talimat-count" style="font-size: 14px; color: var(--text-dim);">
+      📋 <span id="talimat-sayisi">0</span> Talimat
+    </div>
+  </div>
+
+  <div id="talimat-confirmed-badge" class="confirmed-badge hidden">
+    ✅ Talimatlar bugün için onaylanmış
+  </div>
+
+  <button class="btn btn-secondary mb-16" id="btn-view-talimat">📋 Talimatları Gör</button>
+  <button class="btn btn-primary" id="btn-start-work" data-islem="START">▶ Temizliğe Başla</button>
+  <button class="btn btn-secondary mt-16" id="btn-back-select">← Farklı Birim Seç</button>
+</section>
+
+<!-- ─── AKTİF İŞLEM ─── -->
+<section id="screen-active" class="screen">
+  <div class="active-op">
+    <div style="font-size: 32px;">⚙️</div>
+    <h2 style="font-family: var(--font-display); margin-top: 8px;">Aktif İşlem</h2>
+    <div class="timer" id="active-timer">00:00</div>
+    <div class="info" id="active-info">Birim: <strong id="active-unit-name">-</strong></div>
+    <button class="btn btn-danger" id="btn-end-work" data-islem="END">🛑 Bitir</button>
+    <button class="btn btn-secondary mt-16" id="btn-logout-2">← Çıkış Yap</button>
+  </div>
+</section>
+
+<!-- ─── AYARLAR ─── -->
+<section id="screen-settings" class="screen">
+  <h2 style="font-family: var(--font-display); margin-bottom: 16px;">⚙️ Ayarlar</h2>
+  <div class="settings-list">
+    <div class="setting-row">
+      <label>
+        <input type="checkbox" id="sett-ses" />
+        <span>🔊 İşlem sesleri</span>
+      </label>
+    </div>
+    <div class="setting-row">
+      <label>
+        <input type="checkbox" id="sett-titresim" />
+        <span>📳 Titreşim geri bildirimi</span>
+      </label>
+    </div>
+    <div class="setting-row">
+      <label>
+        <input type="checkbox" id="sett-onay-bitir" />
+        <span>🛑 Bitir öncesi onay sor</span>
+      </label>
+    </div>
+  </div>
+  <button class="btn btn-secondary mt-24" id="btn-back-from-settings">← Geri</button>
+</section>
+
+<!-- ─── MODAL: TALİMATLAR ─── -->
+<div class="modal-overlay" id="modal-talimat">
+  <div class="modal">
+    <h3>📋 Talimatlar</h3>
+    <p id="modal-talimat-unit">Birim Adı</p>
+    <p style="font-size: 13px; color: var(--text-dim); margin-bottom: 16px;">
+      ⚠️ Bu talimatları dikkatlice okuyunuz. Temizliğe başlamadan önce tüm maddeleri uyguladığınızdan emin olunuz.
+    </p>
+    <div class="talimat-list" id="talimat-list"></div>
+    <div id="talimat-confirm-section" class="hidden">
+      <div class="warning-banner">
+        ⚠️ BU BİR ÖZELLİKLİ BİRİMDİR! TALİMATLARI OKUDUĞUNUZU ONAYLAMANIZ ZORUNLUDUR!
+      </div>
+      <p style="font-size: 13px;">✅ Talimatları okudum, anladım ve uygulayacağımı onaylıyorum.<br><small style="color: var(--text-dim);">Bu onay gün içinde bir kere yapılır.</small></p>
+      <button class="btn btn-primary" id="btn-confirm-talimat">✓ Onayla ve Devam Et</button>
+    </div>
+    <button class="btn btn-secondary mt-16" id="btn-close-talimat">✓ Anladım, Geri Dön</button>
+  </div>
+</div>
+
+<!-- ─── MODAL: GÜVENLİK DOĞRULAMA ─── -->
+<div class="modal-overlay" id="modal-security">
+  <div class="modal">
+    <h3>🔐 Güvenlik Doğrulaması</h3>
+    <p>İşlem yapabilmek için doğru birimi tekrar okutun</p>
+    <div style="background: var(--bg-2); padding: 12px; border-radius: var(--radius-sm); margin-bottom: 16px;">
+      <div style="font-size: 12px; color: var(--text-dim);">Beklenen Birim</div>
+      <div style="font-weight: 600;" id="security-expected-name">Birim Adı</div>
+      <div class="code" id="security-expected-code">Kod: XXX</div>
+    </div>
+    <div id="qr-reader-security" style="margin-bottom: 16px;"></div>
+    <div id="qr-countdown-security" class="qr-countdown"></div>
+    <button class="btn btn-secondary" id="btn-cancel-security">✗ İptal</button>
+  </div>
+</div>
+
+<!-- ─── FOOTER ─── -->
+<footer class="app-footer">
+  MGDizayn · Mustafa GÜNEŞDOĞDU<br>
+  Bilgisayar Programcı Ahmet KAHREMAN<br>
+  Bilgi İşlem Sorumlusu<br>
+  Dijital Takip Sistemi v3.3 · 12.10.2026
+  <div class="cache-note">📅 Günlük cache TR saati ile 00:00'da sıfırlanır</div>
+</footer>
+
+<!-- ─── TOAST ─── -->
+<div class="toast" id="toast"></div>
+
+<!-- ─── SCRIPTS ─── -->
+<script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
+<script src="https://unpkg.com/mqtt@5.0.3/dist/mqtt.min.js"></script>
+<script src="./push.js"></script>
+<script src="./app.js"></script>
+</body>
+</html>
