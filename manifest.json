@@ -1,7 +1,7 @@
 {
   "name": "MGD CleanOS — Nazilli Devlet Hastanesi Denemesi",
   "short_name": "MGD CleanOS",
-  "description": "MGD Dijital Takip Sistemi",
+  "description": "Nazilli Devlet Hastanesi Dijital Takip Sistemi",
   "start_url": "./index.html",
   "scope": "./",
   "display": "standalone",

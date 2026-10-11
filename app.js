@@ -6,25 +6,17 @@ Nazilli Devlet Hastanesi Bilgi İşlem 2026
 (() => {
 'use strict';
 
-/* ═══════════════════════════════════════════════════════
-   1) KONFİGÜRASYON (BACKEND_URL KALDIRILDI)
-═══════════════════════════════════════════════════════ */
 const CONFIG = {
   MQTT_BROKER: window.MGD_MQTT_BROKER || 'wss://broker.emqx.io:8084/mqtt',
   MQTT_TOPIC_PREFIX: 'mgd/cleanos',
-  
-  // SORUN #1: QR Rate-limit
   QR_COOLDOWN_SUCCESS_MS: 1500,
   QR_COOLDOWN_FAIL_MS: 3000,
   QR_MIN_INTERVAL_MS: 800,
-
-  // SORUN #3: İşlem kilidi
-  ISLEM_MIN_ARALIK_MS: 2000
+  ISLEM_MIN_ARALIK_MS: 2000,
+  GIRIS_TIMEOUT_MS: 5000,
+  MQTT_BAGLANTI_TIMEOUT_MS: 4000
 };
 
-/* ═══════════════════════════════════════════════════════
-   2) UYGULAMA STATE
-═══════════════════════════════════════════════════════ */
 const State = {
   personelId: null,
   personelAd: null,
@@ -39,9 +31,6 @@ const State = {
   mqttBagli: false
 };
 
-/* ═══════════════════════════════════════════════════════
-   3) SORUN #2: YEREL GÜN ANAHTARI (Europe/Istanbul)
-═══════════════════════════════════════════════════════ */
 function turkiyeBugunAnahtari(tarih = new Date()) {
   const fmt = new Intl.DateTimeFormat('en-CA', {
     timeZone: 'Europe/Istanbul',
@@ -50,10 +39,7 @@ function turkiyeBugunAnahtari(tarih = new Date()) {
   return fmt.format(tarih);
 }
 
-function gunlukKey(prefix) {
-  return `${prefix}__${turkiyeBugunAnahtari()}`;
-}
-
+function gunlukKey(prefix) { return `${prefix}__${turkiyeBugunAnahtari()}`; }
 function tcCacheOku() { return localStorage.getItem(gunlukKey('mgd-tc-cache')); }
 function tcCacheYaz(tc) {
   Object.keys(localStorage).filter(k => k.startsWith('mgd-tc-cache__')).forEach(k => localStorage.removeItem(k));
@@ -62,9 +48,6 @@ function tcCacheYaz(tc) {
 function talimatOnaylandiMi(birimId) { return localStorage.getItem(gunlukKey(`mgd-talimat-${birimId}`)) === '1'; }
 function talimatOnayla(birimId) { localStorage.setItem(gunlukKey(`mgd-talimat-${birimId}`), '1'); }
 
-/* ═══════════════════════════════════════════════════════
-   4) AYARLAR & GERİ BİLDİRİM
-═══════════════════════════════════════════════════════ */
 const Ayarlar = {
   get sesAcik() { return localStorage.getItem('mgd-ayar-ses') !== '0'; },
   get titresimAcik() { return localStorage.getItem('mgd-ayar-titresim') !== '0'; },
@@ -105,9 +88,6 @@ function onaySor(baslik, mesaj, { onayMetni = 'Evet', iptalMetni = 'İptal' } = 
   });
 }
 
-/* ═══════════════════════════════════════════════════════
-   5) SORUN #1: QR YÖNETİCİSİ (Rate-limit + In-flight)
-═══════════════════════════════════════════════════════ */
 const QRState = { isProcessing: false, lastScanAt: 0, cooldownUntil: 0, lastCode: null };
 let qrScanner = null;
 let qrScannerSecurity = null;
@@ -128,7 +108,6 @@ async function birimDetaySorgula(qrKod, target = 'main') {
   const scanner = target === 'security' ? qrScannerSecurity : qrScanner;
   if (scanner) { try { await scanner.pause(true); } catch {} }
 
-  // SADECE MQTT İLE SORGULA (Fetch yok!)
   State.mqttClient.publish(`${CONFIG.MQTT_TOPIC_PREFIX}/birim-detay`, JSON.stringify({
     qr_kod: qrKod,
     tc: State.personelId,
@@ -155,9 +134,6 @@ function qrGeriSayimBaslat(ms, target = 'main') {
   tick();
 }
 
-/* ═══════════════════════════════════════════════════════
-   6) SORUN #3: İŞLEM KİLİDİ (Çift dokunuş engelleme)
-═══════════════════════════════════════════════════════ */
 const IslemKilit = { aktif: false, sonIslem: null, sonZaman: 0 };
 
 async function guvenliIslem(islemAdi, mqttPayload) {
@@ -177,7 +153,7 @@ async function guvenliIslem(islemAdi, mqttPayload) {
       birim_id: State.birimId,
       ...mqttPayload
     }), { qos: 1 });
-    return { durum: 'ok' }; // Cevap asenkron olarak handleMqttMessage'da işlenecek
+    return { durum: 'ok' };
   } catch (err) {
     return { durum: 'error', err };
   } finally {
@@ -195,9 +171,6 @@ function uiButonKilitle(islem, kilitli) {
   }
 }
 
-/* ═══════════════════════════════════════════════════════
-   7) MQTT BAĞLANTI VE MESAJ İŞLEME
-═══════════════════════════════════════════════════════ */
 async function mqttBaglan() {
   if (typeof mqtt === 'undefined') return;
   try {
@@ -262,7 +235,11 @@ function handleMqttMessage(topic, data) {
       }
       QRState.isProcessing = false;
       const scanner = qrScanner;
-      setTimeout(() => { if (!QRState.isProcessing && scanner) { try { scanner.resume(); } catch {} } }, Math.max(0, QRState.cooldownUntil - Date.now()));
+      setTimeout(() => { 
+        if (!QRState.isProcessing && scanner) { 
+          try { scanner.resume(); } catch {} 
+        } 
+      }, Math.max(0, QRState.cooldownUntil - Date.now()));
     }
   } 
   else if (topic === `${CONFIG.MQTT_TOPIC_PREFIX}/islem/cevap`) {
@@ -293,18 +270,50 @@ function handleMqttMessage(topic, data) {
   }
 }
 
-/* ═══════════════════════════════════════════════════════
-   8) İŞ AKIŞI FONKSİYONLARI
-═══════════════════════════════════════════════════════ */
-function girisYap(tc) {
-  if (!/^\d{11}$/.test(tc)) { uiHataGoster('TC kimlik numarası 11 haneli olmalıdır.'); return; }
+async function girisYap(tc) {
+  if (!/^\d{11}$/.test(tc)) { 
+    uiHataGoster('TC kimlik numarası 11 haneli olmalıdır.'); 
+    return; 
+  }
+
+  if (!State.mqttClient || !State.mqttBagli) {
+    uiToast('MQTT sunucusuna bağlanılıyor...', 'info');
+    State.personelId = tc;
+    await mqttBaglan();
+
+    let bekleme = 0;
+    while (!State.mqttBagli && bekleme < CONFIG.MQTT_BAGLANTI_TIMEOUT_MS) {
+      await new Promise(r => setTimeout(r, 500));
+      bekleme += 500;
+    }
+
+    if (!State.mqttBagli) {
+      uiHataGoster('MQTT bağlantısı sağlanamadı. Lütfen ağınızı ve broker adresini kontrol edin.');
+      uiButonKilitle('GIRIS', false);
+      return;
+    }
+  }
+
   State.personelId = tc;
   uiButonKilitle('GIRIS', true);
-  State.mqttClient.publish(`${CONFIG.MQTT_TOPIC_PREFIX}/giris`, JSON.stringify({ tc: tc, req_id: `req_${Date.now()}` }), { qos: 1 });
+
+  const reqId = `req_${Date.now()}`;
+  State.mqttClient.publish(`${CONFIG.MQTT_TOPIC_PREFIX}/giris`, JSON.stringify({ 
+    tc: tc, 
+    req_id: reqId 
+  }), { qos: 1 });
+
+  setTimeout(() => {
+    const btn = document.querySelector('[data-islem="GIRIS"]');
+    if (btn && btn.disabled) {
+      uiHataGoster('Sunucudan yanıt alınamadı. Python servisinin çalıştığından ve aynı MQTT broker\'a bağlı olduğundan emin olun.');
+      uiButonKilitle('GIRIS', false);
+    }
+  }, CONFIG.GIRIS_TIMEOUT_MS);
 }
 
 function birimBilgiGoster() {
-  document.getElementById('unit-name').textContent = `🏢 ${State.birimAd}`;
+  document.getElementById('unit-name').textContent = ` ${State.birimAd}`;
   document.getElementById('unit-code').textContent = `Kod: ${State.birimKod}`;
   document.getElementById('talimat-sayisi').textContent = State.talimatlar.length;
   const unitCard = document.getElementById('unit-card');
@@ -335,9 +344,6 @@ async function executeEndWithConfirm() {
   else if (sonuc.durum === 'error') uiHataGoster('İşlem bitirilemedi. Tekrar deneyin.');
 }
 
-/* ═══════════════════════════════════════════════════════
-   9) QR SCANNER YÖNETİMİ
-═══════════════════════════════════════════════════════ */
 async function qrScannerBaslat(target = 'main') {
   const elementId = target === 'security' ? 'qr-reader-security' : 'qr-reader';
   const el = document.getElementById(elementId);
@@ -346,7 +352,6 @@ async function qrScannerBaslat(target = 'main') {
     const scanner = new Html5Qrcode(elementId);
     if (target === 'security') qrScannerSecurity = scanner; else qrScanner = scanner;
     await scanner.start({ fps: 10, qrbox: { width: 250, height: 250 } }, (decodedText) => {
-      // Güvenlik doğrulaması için de aynı fonksiyonu kullanıyoruz
       if (target === 'security' && decodedText === State.birimKod) {
         modalKapat('modal-security');
         qrScannerDurdur('security');
@@ -372,9 +377,6 @@ async function qrScannerDurdur(target = 'main') {
   }
 }
 
-/* ═══════════════════════════════════════════════════════
-   10) TIMER & UI YARDIMCILARI
-═══════════════════════════════════════════════════════ */
 function timerBaslat() {
   timerDurdur();
   State.timerInterval = setInterval(() => {
@@ -429,9 +431,6 @@ async function cikisYap() {
   ekranGoster('screen-login');
 }
 
-/* ═══════════════════════════════════════════════════════
-   11) EVENT LİSTENER'LAR & BAŞLANGIÇ
-═══════════════════════════════════════════════════════ */
 function eventListenerlariBaslat() {
   document.getElementById('screen-splash').addEventListener('click', () => {
     const cached = tcCacheOku();
@@ -474,7 +473,6 @@ function eventListenerlariBaslat() {
   document.getElementById('btn-end-work').addEventListener('click', executeEndWithConfirm);
   document.getElementById('btn-cancel-security').addEventListener('click', () => { modalKapat('modal-security'); qrScannerDurdur('security'); });
 
-  // Ayarlar
   ['ses', 'titresim', 'onay-bitir'].forEach(k => {
     const el = document.getElementById(`sett-${k}`);
     if (el) {
