@@ -502,7 +502,7 @@ async function qrScannerBaslat(target = 'main') {
     if (target === 'security') qrScannerSecurity = scanner; else qrScanner = scanner;
     await scanner.start(
       { facingMode: 'environment' },
-      { fps: 10, qrbox: { width: 250, height: 250 } },
+      { fps: 10 },
       (decodedText) => {
         if (target === 'security') {
           if (decodedText === State.birimKod) {
