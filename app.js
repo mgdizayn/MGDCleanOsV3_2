@@ -7,7 +7,7 @@ Nazilli Devlet Hastanesi Bilgi İşlem 2026
 'use strict';
 
 const CONFIG = {
-  MQTT_BROKER: window.MGD_MQTT_BROKER || 'wss://broker.emqx.io:8084/mqtt',
+  MQTT_BROKER: window.MGD_MQTT_BROKER || 'wss://broker.hivemq.com:8884/mqtt',
   MQTT_TOPIC_PREFIX: 'mgd/cleanos',
   QR_COOLDOWN_SUCCESS_MS: 1500,
   QR_COOLDOWN_FAIL_MS: 3000,

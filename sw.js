@@ -3,7 +3,7 @@ MGD CleanOS — Service Worker v3.3
 Mustafa GÜNEŞDOĞDU / MGDizayn
 Nazilli Devlet Hastanesi Bilgi İşlem 2026
 ═══════════════════════════════════════════════════════ */
-const CACHE_VERSION = 'mgd-cleanos-v3.3.0';
+const CACHE_VERSION = 'mgd-cleanos-v3.3.1';
 
 const SHELL_URLS = [
   './',
@@ -20,6 +20,7 @@ const ASSET_URLS = [
 ];
 
 const BYPASS_PATTERNS = [
+  'broker.hivemq.com',
   'broker.emqx.io',
   'mqtt',
   'wss://',
